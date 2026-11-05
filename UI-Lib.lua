@@ -3425,35 +3425,94 @@ function StarHubUI:CreateWindow(cfg)
                 return row
             end
 
-            function BoxObj:AddDangerButton(title, subtitle, iconAsset, callback)
-                function BoxObj:AddLabel(titleText)
-                     local row = Instance.new("Frame", Container)
-                     row.Size = UDim2.new(1, 0, 0, 18)
-                     row.BackgroundTransparency = 1
+                        function BoxObj:AddDangerButton(title, subtitle, iconAsset, callback)
+                local btn = Instance.new("TextButton", Container)
+                btn.Size = UDim2.new(1, 0, 0, 0)
+                btn.AutomaticSize = Enum.AutomaticSize.Y
+                btn.BackgroundColor3 = Theme.Danger
+                btn.Text = ""
+                btn.AutoButtonColor = false
+                Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
 
-                     local lbl = Instance.new("TextLabel", row)
-                     lbl.Size = UDim2.new(1, 0, 1, 0)
-                     lbl.BackgroundTransparency = 1
-                     lbl.Font = Enum.Font.GothamMedium
-                     lbl.TextSize = 10.5
-                     lbl.TextColor3 = Theme.TextBody
-                     lbl.TextXAlignment = Enum.TextXAlignment.Left
-                     lbl.Text = titleText
+                local bPad = Instance.new("UIPadding", btn)
+                bPad.PaddingLeft = UDim.new(0, 32)
+                bPad.PaddingRight = UDim.new(0, 10)
+                bPad.PaddingTop = UDim.new(0, 7)
+                bPad.PaddingBottom = UDim.new(0, 7)
 
-                     return {
-                         SetText = function(newText)
-                            if lbl and lbl.Parent then
-                                lbl.Text = newText
-                            end
-                         end,
-                         SetColor = function(newColor)
-                             if lbl and lbl.Parent then
-                                lbl.TextColor3 = newColor
-                             end
-                         end,
-                         Frame = row
-                     }
+                local bLayout = Instance.new("UIListLayout", btn)
+                bLayout.SortOrder = Enum.SortOrder.LayoutOrder
+                bLayout.Padding = UDim.new(0, 2)
+
+                local ic = Instance.new("ImageLabel", btn)
+                ic.Size = UDim2.new(0, 14, 0, 14)
+                ic.AnchorPoint = Vector2.new(0, 0.5)
+                ic.Position = UDim2.new(0, -22, 0.5, 0)
+                ic.BackgroundTransparency = 1
+                ic.Image = iconAsset or StarHubUI.Icons.Skull
+                ic.ImageColor3 = Color3.fromRGB(255, 255, 255)
+
+                local tLbl = Instance.new("TextLabel", btn)
+                tLbl.Size = UDim2.new(1, 0, 0, 0)
+                tLbl.BackgroundTransparency = 1
+                tLbl.Font = Enum.Font.GothamBold
+                tLbl.TextSize = 10
+                tLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+                tLbl.TextXAlignment = Enum.TextXAlignment.Left
+                tLbl.TextWrapped = true
+                tLbl.AutomaticSize = Enum.AutomaticSize.Y
+                tLbl.Text = title
+
+                if subtitle and subtitle ~= "" then
+                    local sLbl = Instance.new("TextLabel", btn)
+                    sLbl.Size = UDim2.new(1, 0, 0, 0)
+                    sLbl.BackgroundTransparency = 1
+                    sLbl.Font = Enum.Font.Gotham
+                    sLbl.TextSize = 8.5
+                    sLbl.TextColor3 = Color3.fromRGB(255, 220, 220)
+                    sLbl.TextXAlignment = Enum.TextXAlignment.Left
+                    sLbl.TextWrapped = true
+                    sLbl.AutomaticSize = Enum.AutomaticSize.Y
+                    sLbl.Text = subtitle
                 end
+
+                btn.MouseButton1Click:Connect(function()
+                    PlaySound("Click")
+                    MicroBounce(btn)
+                    pcall(callback)
+                end)
+                return btn
+            end
+
+            function BoxObj:AddLabel(titleText)
+                local row = Instance.new("Frame", Container)
+                row.Size = UDim2.new(1, 0, 0, 18)
+                row.BackgroundTransparency = 1
+
+                local lbl = Instance.new("TextLabel", row)
+                lbl.Size = UDim2.new(1, 0, 1, 0)
+                lbl.BackgroundTransparency = 1
+                lbl.Font = Enum.Font.GothamMedium
+                lbl.TextSize = 10.5
+                lbl.TextColor3 = Theme.TextBody
+                lbl.TextXAlignment = Enum.TextXAlignment.Left
+                lbl.Text = titleText
+
+                return {
+                    SetText = function(newText)
+                        if lbl and lbl.Parent then
+                            lbl.Text = newText
+                        end
+                    end,
+                    SetColor = function(newColor)
+                        if lbl and lbl.Parent then
+                            lbl.TextColor3 = newColor
+                        end
+                    end,
+                    Frame = row
+                }
+            end
+
                 
                 local btn = Instance.new("TextButton", Container)
                 btn.Size = UDim2.new(1, 0, 0, 0)
