@@ -2674,27 +2674,14 @@ function StarHubUI:CreateWindow(cfg)
                 RegisterElement("Accents", valLbl)
 
                 local trackRow = Instance.new("Frame", row)
-                trackRow.Size = UDim2.new(1, 0, 0, 20)
+                trackRow.Size = UDim2.new(1, 0, 0, 14)
                 trackRow.BackgroundTransparency = 1
                 trackRow.LayoutOrder = 2
 
-                local btnDown = Instance.new("TextButton", trackRow)
-                btnDown.Size = UDim2.new(0, 20, 0, 20)
-                btnDown.Position = UDim2.new(0, 0, 0, 0)
-                btnDown.BackgroundColor3 = Theme.SubBox
-                btnDown.Text = "-"
-                btnDown.Font = Enum.Font.GothamBold
-                btnDown.TextSize = 12
-                btnDown.TextColor3 = Theme.TextDim
-                Instance.new("UICorner", btnDown).CornerRadius = UDim.new(1, 0)
-                local bdSt = Instance.new("UIStroke", btnDown)
-                bdSt.Color = Theme.Border
-                RegisterElement("SubBoxes", btnDown)
-                RegisterElement("Borders", bdSt)
-
+                -- XÓA BỎ HOÀN TOÀN CÁC NÚT BẤM DẤU CỘNG TRỪ RƯỜM RÀ, ĐỂ THANH TRƯỢT FULL CHIỀU RỘNG KHUNG
                 local Track = Instance.new("Frame", trackRow)
-                Track.Size = UDim2.new(1, -54, 0, 6)
-                Track.Position = UDim2.new(0, 27, 0.5, -3)
+                Track.Size = UDim2.new(1, 0, 0, 6)
+                Track.Position = UDim2.new(0, 0, 0.5, -3)
                 Track.BackgroundColor3 = Theme.SubBox
                 Instance.new("UICorner", Track).CornerRadius = UDim.new(1, 0)
 
@@ -2711,53 +2698,58 @@ function StarHubUI:CreateWindow(cfg)
                 Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                 Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
 
-                local btnUp = Instance.new("TextButton", trackRow)
-                btnUp.Size = UDim2.new(0, 20, 0, 20)
-                btnUp.Position = UDim2.new(1, -20, 0, 0)
-                btnUp.BackgroundColor3 = Theme.SubBox
-                btnUp.Text = "+"
-                btnUp.Font = Enum.Font.GothamBold
-                btnUp.TextSize = 12
-                btnUp.TextColor3 = Theme.TextDim
-                Instance.new("UICorner", btnUp).CornerRadius = UDim.new(1, 0)
-                local buSt = Instance.new("UIStroke", btnUp)
-                buSt.Color = Theme.Border
-                RegisterElement("SubBoxes", btnUp)
-                RegisterElement("Borders", buSt)
-
                 local function SetVal(v)
                     currentVal = math.clamp(v, minVal, maxVal)
-                    local r = (currentVal - minVal) / (maxVal - minVal)
+                    local r = (maxVal == minVal) and 0 or (currentVal - minVal) / (maxVal - minVal)
                     Fill.Size = UDim2.new(r, 0, 1, 0)
                     Knob.Position = UDim2.new(r, -6, 0.5, -6)
                     valLbl.Text = tostring(currentVal) .. " " .. suffix
-                    valLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
                     pcall(callback, currentVal)
                 end
 
-                btnDown.MouseButton1Click:Connect(function() PlaySound("Click") SetVal(currentVal - 1) end)
-                btnUp.MouseButton1Click:Connect(function() PlaySound("Click") SetVal(currentVal + 1) end)
-
+                -- THUẬT TOÁN KÉO THẢ SIÊU NHẠY: BÁM CHUỘT THỜI GIAN THỰC KHI ĐANG GIỮ CHUỘT TRÊN THANH
                 local dragging = false
+                
                 Track.InputBegan:Connect(function(inp)
                     if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
                         dragging = true
-                        PlaySound("Click")
-                        local w = Track.AbsoluteSize.X
-                        local rel = math.clamp(inp.Position.X - Track.AbsolutePosition.X, 0, w)
-                        SetVal(math.floor(minVal + (maxVal - minVal) * (rel / w)))
                     end
                 end)
+
                 UserInputService.InputEnded:Connect(function(inp)
-                    if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then dragging = false end
-                end)
-                UserInputService.InputChanged:Connect(function(inp)
-                    if dragging and (inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch) then
-                        local w = Track.AbsoluteSize.X
-                        local rel = math.clamp(inp.Position.X - Track.AbsolutePosition.X, 0, w)
-                        SetVal(math.floor(minVal + (maxVal - minVal) * (rel / w)))
+                    if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then 
+                        dragging = false 
                     end
                 end)
+
+                -- Quét vị trí chuột liên tục bằng Heartbeat/RenderStepped để tạo độ nhạy tuyệt đối
+                local updateConn
+                updateConn = RunService.Heartbeat:Connect(function()
+                    if not row or not row.Parent then 
+                        updateConn:Disconnect() 
+                        return 
+                    end
+                    if dragging then
+                        local mousePos = UserInputService:GetMouseLocation()
+                        local trackPos = Track.AbsolutePosition
+                        local trackWidth = Track.AbsoluteSize.X
+                        
+                        if trackWidth > 0 then
+                            -- Tính toán lại tỷ lệ phần trăm dựa trên tọa độ màn hình thực tế
+                            local relX = math.clamp(mousePos.X - trackPos.X, 0, trackWidth)
+                            local percentage = relX / trackWidth
+                            local finalVal = minVal + (maxVal - minVal) * percentage
+                            
+                            -- Nếu khoảng trượt rộng, tự làm tròn số nguyên cho mượt, ngược lại giữ số phân số
+                            if maxVal - minVal > 100 then
+                                SetVal(math.floor(finalVal + 0.5))
+                            else
+                                SetVal(math.floor(finalVal * 10 + 0.5) / 10)
+                            end
+                        end
+                    end
+                end)
+
                 return { Set = SetVal, Get = function() return currentVal end }
             end
 
